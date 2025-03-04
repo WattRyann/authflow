@@ -12,61 +12,63 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [18.x, 20.x, 22.x] # 添加 22.x，支持最新版本测试
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
-    
-    # 添加启用 Corepack 的步骤
-    - name: Enable Corepack
+        # 通过 setup-node 启用 Corepack 和指定 Yarn 版本
+        always-auth: false
+        registry-url: 'https://registry.yarnpkg.com'
+
+    - name: Enable Corepack and Set Yarn Version
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
-    
-    - name: Get yarn cache directory path
-      id: yarn-cache-dir-path
+        yarn --version # 验证 Yarn 版本，确保为 4.6.0
+
+    - name: Get Yarn Cache Directory
+      id: yarn-cache-dir
       run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
-    
-    - name: Cache yarn dependencies
+
+    - name: Cache Yarn Dependencies
       uses: actions/cache@v4
       id: yarn-cache
       with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        path: ${{ steps.yarn-cache-dir.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-
-    
-    - name: Install dependencies
+          ${{ runner.os }}-yarn-${{ matrix.node-version }}-
+
+    - name: Install Dependencies
       run: yarn install --frozen-lockfile
-    
-    - name: Setup test environment
+
+    - name: Setup Test Environment
       run: |
         cp .env.example .env.test
-        # 设置测试环境所需的环境变量
         echo "NODE_ENV=test" >> .env.test
-    
-    - name: Run linter
+
+    - name: Run Linter
       run: yarn lint
-    
-    - name: Run tests
+
+    - name: Run Tests
       run: yarn test
       env:
         CI: true
-    
-    - name: Upload coverage reports
+
+    - name: Upload Coverage Reports
       uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./coverage
         fail_ci_if_error: false
-    
-    - name: Build project
+
+    - name: Build Project
       run: yarn build
       env:
         CI: true
@@ -75,30 +77,35 @@ jobs:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Use Node.js 22.x
       uses: actions/setup-node@v4
       with:
         node-version: 22.x
         cache: 'yarn'
-    
-    - name: Install dependencies
+
+    - name: Enable Corepack and Set Yarn Version
+      run: |
+        corepack enable
+        corepack prepare yarn@4.6.0 --activate
+        yarn --version # 验证 Yarn 版本
+
+    - name: Install Dependencies
       run: yarn install --frozen-lockfile
-    
-    - name: Setup production environment
+
+    - name: Setup Production Environment
       run: |
         cp .env.example .env.production
-        # 设置生产环境所需的环境变量
         echo "NODE_ENV=production" >> .env.production
         echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" >> .env.production
         echo "ALLOWED_ORIGINS=${{ secrets.PROD_ALLOWED_ORIGINS }}" >> .env.production
-    
+
     - name: Install Vercel CLI
       run: yarn global add vercel
-    
+
     - name: Deploy to Vercel
       run: vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
       env:
