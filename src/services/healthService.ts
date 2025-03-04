@@ -17,19 +17,16 @@ interface HealthCheckResponse {
 }
 
 export class HealthService {
-  private redis: Redis;
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-    this.prisma = defaultPrisma;
-  }
+  constructor(
+    private redis: Redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379'),
+    private prisma: PrismaClient = defaultPrisma
+  ) {}
 
   private async checkDatabase(): Promise<string> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
       return 'ok';
-    } catch (error) {
+    } catch {
       return 'error';
     }
   }
@@ -38,7 +35,7 @@ export class HealthService {
     try {
       await this.redis.ping();
       return 'ok';
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       return 'error';
     }
   }

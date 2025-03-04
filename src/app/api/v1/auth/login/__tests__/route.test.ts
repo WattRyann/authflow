@@ -3,9 +3,8 @@ import { POST } from '../route';
 import { login } from '@/services/authService';
 import { loginLimiter } from '@/middleware/rateLimit';
 import { APIError } from '@/middleware/errorHandler';
-import { ErrorCodes, LoginRequest } from '@/types/api';
+import { ErrorCodes } from '@/types/api';
 import { handleError } from '@/middleware/errorHandler';
-import i18n from '@/i18n';
 
 // Mock dependencies
 jest.mock('@/services/authService');

@@ -1,4 +1,4 @@
-import jwt, { SignOptions, JwtPayload, VerifyOptions } from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import ms, { StringValue } from 'ms';
 import { PrismaClient } from '@prisma/client';
@@ -104,7 +104,7 @@ export async function generateTokens(
 export function verifyAccessToken(token: string): TokenPayload & JwtPayload {
   try {
     return jwt.verify(token, ACCESS_SECRET) as TokenPayload & JwtPayload;
-  } catch (error) {
+  } catch {
     throw new Error('Invalid or expired access token');
   }
 }
@@ -134,7 +134,7 @@ export async function verifyRefreshToken(
     }
     
     return payload;
-  } catch (error) {
+  } catch {
     throw new Error('Invalid or expired refresh token');
   }
 }

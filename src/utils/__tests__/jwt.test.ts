@@ -31,7 +31,6 @@ jest.mock('@/lib/prisma', () => ({
   default: mockPrisma,
 }));
 
-// Import the function after mocking
 const { generateTokens } = require('@/utils/jwt');
 
 describe('generateTokens', () => {

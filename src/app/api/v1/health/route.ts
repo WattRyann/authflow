@@ -33,7 +33,7 @@ export async function GET() {
     }
 
     return NextResponse.json(healthStatus);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         status: 'error',

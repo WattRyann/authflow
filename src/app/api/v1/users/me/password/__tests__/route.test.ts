@@ -137,9 +137,6 @@ describe('patchHandler', () => {
     const unknownError = new Error('Unknown error');
     (changePassword as jest.Mock).mockRejectedValue(unknownError);
 
-    // 临时修改环境变量
-    const originalNodeEnv = process.env.NODE_ENV;
-
     const response = await patchHandler(mockRequest as NextRequest, userId);
 
     expect(response).toEqual({

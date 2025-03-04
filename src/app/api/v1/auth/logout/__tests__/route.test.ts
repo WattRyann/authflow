@@ -11,13 +11,15 @@ import { extractTokenFromRequest } from '@/middleware/authMiddleware';
 jest.mock('@/services/logoutService');
 jest.mock('@/middleware/authMiddleware', () => ({
   // Keep the actual implementation of withAuth if needed, or mock it out
-  withAuth: jest.fn((handler: any) => handler), 
+  withAuth: jest.fn(<T>(handler: (req: NextRequest) => Promise<T>) => handler),
   extractTokenFromRequest: jest.fn()
 }));
+
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
   NextResponse: {
-    json: jest.fn((body: any, init?: any) => ({ body, init }))
+    // 使用标准ResponseInit类型
+    json: jest.fn((body: unknown, init?: ResponseInit) => ({ body, init }))
   }
 }));
 jest.mock('@/i18n', () => ({
@@ -37,7 +39,7 @@ describe('logoutHandler', () => {
     (extractTokenFromRequest as jest.Mock).mockReturnValue(null);
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest, 123);
+    const response = await logoutHandler(mockRequest as NextRequest);
 
     // Assertions
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
@@ -63,7 +65,7 @@ describe('logoutHandler', () => {
     mockRequest.json = mockJson;
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest, 123);
+    const response = await logoutHandler(mockRequest as NextRequest);
 
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
     expect(logout).toHaveBeenCalledWith('valid-access-token', { refresh_token: 'valid-refresh-token' });
@@ -86,7 +88,7 @@ describe('logoutHandler', () => {
     (logout as jest.Mock).mockRejectedValue(apiError);
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest, 123);
+    const response = await logoutHandler(mockRequest as NextRequest);
 
     expect(response).toEqual({
       body: {
@@ -105,7 +107,7 @@ describe('logoutHandler', () => {
     (logout as jest.Mock).mockRejectedValue(new Error('Unknown error'));
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest, 123);
+    const response = await logoutHandler(mockRequest as NextRequest);
 
     expect(response).toEqual({
       body: {
@@ -126,7 +128,7 @@ describe('logoutHandler', () => {
     const mockJson = jest.fn().mockRejectedValue(new Error('Invalid JSON'));
     mockRequest.json = mockJson;
 
-    const response = await logoutHandler(mockRequest as NextRequest, 123);
+    const response = await logoutHandler(mockRequest as NextRequest);
 
     // No error, just treat body as empty
     expect(mockJson).toHaveBeenCalled();

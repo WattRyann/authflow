@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getUserHandler } from '../route';
 import { getCurrentUserInfo } from '@/services/userService';
 import { ErrorCodes, UserInfo } from '@/types/api';

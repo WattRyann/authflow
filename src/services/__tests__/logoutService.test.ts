@@ -53,8 +53,6 @@ describe('logout', () => {
     consoleWarnSpy.mockRestore();
   });
 
-  const validEmail = 'test@example.com';
-
   it('should successfully logout user with access token only', async () => {
     await expect(logout('valid-access-token', {}, mockPrismaClient)).resolves.not.toThrow();
     

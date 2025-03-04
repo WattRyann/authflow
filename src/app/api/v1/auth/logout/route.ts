@@ -43,7 +43,7 @@ export function jsonSuccess<T>(data: T | null, message: string): NextResponse<AP
  */
 export async function logoutHandler(
   request: NextRequest,
-  userId: number
+  // userId: number
 ): Promise<NextResponse<APIResponse<LogoutData | null>>> {
   try {
     // Extract the access token from request headers

@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { APIError } from '@/middleware/errorHandler';
-import { ErrorCodes, UserInfo } from '@/types/api';
+import { ErrorCodes } from '@/types/api';
 import i18n from '@/i18n';
 import { getCurrentUserInfo } from '@/services/userService';
 

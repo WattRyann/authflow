@@ -29,7 +29,7 @@ describe('register', () => {
   
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(crypto, 'randomBytes').mockImplementation((size: number) => {
+    jest.spyOn(crypto, 'randomBytes').mockImplementation(() => {
       return Buffer.from('mockToken123');
     });
     // 创建 mock PrismaClient

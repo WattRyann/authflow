@@ -25,7 +25,7 @@ describe('handleError', () => {
       { field: 'username' }
     );
 
-    const response = handleError(apiError);
+    handleError(apiError);
 
     expect(NextResponse.json).toHaveBeenCalledWith(
       {
@@ -39,7 +39,7 @@ describe('handleError', () => {
   });
 
   it('应该将非 Error 实例转换为 Error', () => {
-    const response = handleError('字符串错误');
+    handleError('字符串错误');
 
     expect(NextResponse.json).toHaveBeenCalledWith(
       {
@@ -54,7 +54,7 @@ describe('handleError', () => {
 
   it('应该处理普通 Error', () => {
     const error = new Error('普通错误');
-    const response = handleError(error);
+    handleError(error);
 
     expect(NextResponse.json).toHaveBeenCalledWith(
       {
@@ -68,7 +68,7 @@ describe('handleError', () => {
   });
 
   it('应该处理 null 或 undefined 错误', () => {
-    const response = handleError(null);
+    handleError(null);
 
     expect(NextResponse.json).toHaveBeenCalledWith(
       {
@@ -89,7 +89,7 @@ describe('handleError', () => {
       { retryAfter: 60 }
     );
 
-    const response = handleError(apiError);
+    handleError(apiError);
 
     expect(NextResponse.json).toHaveBeenCalledWith(
       {

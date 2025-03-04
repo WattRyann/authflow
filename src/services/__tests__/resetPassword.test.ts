@@ -4,6 +4,21 @@ import { APIError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../types/api';
 import { hashPassword } from '../../utils/bcrypt';
 import { validatePassword } from '../../utils/validation';
+import { PrismaClient } from '@prisma/client';
+
+// 添加事务类型定义
+interface ResetTx {
+  password_Resets: {
+    findFirst: jest.Mock;
+    update: jest.Mock;
+  };
+  users: {
+    update: jest.Mock;
+  };
+  blacklisted_Tokens: {
+    createMany: jest.Mock;
+  };
+}
 
 jest.mock('../../utils/bcrypt', () => ({
   hashPassword: jest.fn()
@@ -16,8 +31,8 @@ jest.mock('../../i18n', () => ({
 }));
 
 describe('resetPassword', () => {
-  let mockPrisma: any;
-  let tx: any;
+  let mockPrisma: jest.Mocked<PrismaClient>;
+  let tx: ResetTx;
 
   const validToken = 'valid-token';
   const validNewPassword = 'ValidPass123';
@@ -52,8 +67,13 @@ describe('resetPassword', () => {
 
     // 构造模拟的 PrismaClient，并将 $transaction 方法模拟为调用回调并传入 tx 对象
     mockPrisma = {
-      $transaction: jest.fn((callback: any) => callback(tx))
-    };
+      $transaction: jest.fn((callback: (tx: ResetTx) => Promise<unknown>) => callback(tx)),
+      $on: jest.fn(),
+      $connect: jest.fn(),
+      $disconnect: jest.fn(),
+      $use: jest.fn(),
+      // 添加其他必要的 PrismaClient 方法
+    } as unknown as jest.Mocked<PrismaClient>;
 
     // 默认情况下，新密码验证通过
     (validatePassword as jest.Mock).mockReturnValue(true);

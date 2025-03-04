@@ -128,7 +128,9 @@ describe('SSO Service', () => {
     beforeEach(() => {
       // 模拟状态缓存
       const { state } = getSSOAuthorizationUrl('google');
-      (global as any).stateCache = new Map([[state, {
+      (global as typeof globalThis & { 
+        stateCache: Map<string, { provider: string; createdAt: number }> 
+      }).stateCache = new Map([[state, {
         provider: 'google',
         createdAt: Date.now()
       }]]);

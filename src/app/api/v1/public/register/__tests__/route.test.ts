@@ -155,7 +155,7 @@ describe('POST /api/v1/public/register', () => {
     (register as jest.Mock).mockRejectedValue(error);
 
     // Act: Invoke the POST handler
-    const response = await POST(mockRequest);
+    await POST(mockRequest);
 
     // Assert: Verify error handling behavior
     expect(handleError).toHaveBeenCalledWith(error);

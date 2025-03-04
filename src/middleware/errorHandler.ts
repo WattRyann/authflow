@@ -5,26 +5,23 @@ import { ErrorCodes, APIResponse } from '../types/api';
  * Custom error class for API responses.
  * Extends the built-in Error class to include HTTP status, error code, and additional data.
  */
-export class APIError extends Error {
+export class APIError<T = unknown> extends Error {
   public statusCode: number;
   public code: ErrorCodes;
-  public data?: any;
+  public data?: T;
 
-  /**
-   * Creates an instance of APIError.
-   * @param statusCode - The HTTP status code associated with the error.
-   * @param code - A specific error code to identify the error.
-   * @param message - A descriptive error message.
-   * @param data - Optional additional data related to the error.
-   */
-  constructor(statusCode: number, code: ErrorCodes, message: string, data?: any) {
+  constructor(
+    statusCode: number, 
+    code: ErrorCodes, 
+    message: string, 
+    data?: T
+  ) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
     this.data = data;
     this.name = 'APIError';
 
-    // Ensure the proper prototype chain is set for correct instanceof checks.
     Object.setPrototypeOf(this, APIError.prototype);
   }
 }

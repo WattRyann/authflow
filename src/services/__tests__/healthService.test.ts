@@ -28,14 +28,13 @@ describe('HealthService', () => {
     (Redis as jest.MockedClass<typeof Redis>).mockImplementation(() => mockRedis);
 
     // 创建服务实例
-    healthService = new HealthService();
+    healthService = new HealthService(mockRedis, mockPrisma);
   });
 
   describe('check', () => {
     it('应该在所有服务正常时返回健康状态', async () => {
       // 设置模拟响应
       mockRedis.ping.mockResolvedValue('PONG');
-      (healthService as any).prisma.$queryRaw.mockResolvedValue([{ '1': 1 }]);
 
       // 执行健康检查
       const result = await healthService.check();
@@ -54,13 +53,16 @@ describe('HealthService', () => {
 
       // 验证调用
       expect(mockRedis.ping).toHaveBeenCalled();
-      expect((healthService as any).prisma.$queryRaw).toHaveBeenCalled();
+      expect(
+        (healthService as unknown as { prisma: { $queryRaw: jest.Mock }})
+          .prisma.$queryRaw
+      ).toHaveBeenCalled();
     });
 
     it('应该在数据库连接失败时返回不健康状态', async () => {
-      // 设置模拟响应
       mockRedis.ping.mockResolvedValue('PONG');
-      (healthService as any).prisma.$queryRaw.mockRejectedValue(new Error('Database connection failed'));
+      (healthService as unknown as { prisma: { $queryRaw: jest.Mock }})
+        .prisma.$queryRaw.mockRejectedValue(new Error('Database connection failed'));
 
       // 执行健康检查
       const result = await healthService.check();
@@ -79,9 +81,9 @@ describe('HealthService', () => {
     });
 
     it('应该在缓存连接失败时返回不健康状态', async () => {
-      // 设置模拟响应
       mockRedis.ping.mockRejectedValue(new Error('Redis connection failed'));
-      (healthService as any).prisma.$queryRaw.mockResolvedValue([{ '1': 1 }]);
+      (healthService as unknown as { prisma: { $queryRaw: jest.Mock }})
+        .prisma.$queryRaw.mockResolvedValue([{ '1': 1 }]);
 
       // 执行健康检查
       const result = await healthService.check();
@@ -102,7 +104,8 @@ describe('HealthService', () => {
     it('应该在所有服务都失败时返回不健康状态', async () => {
       // 设置模拟响应
       mockRedis.ping.mockRejectedValue(new Error('Redis connection failed'));
-      (healthService as any).prisma.$queryRaw.mockRejectedValue(new Error('Database connection failed'));
+      (healthService as unknown as { prisma: { $queryRaw: jest.Mock }})
+        .prisma.$queryRaw.mockRejectedValue(new Error('Database connection failed'));
 
       // 执行健康检查
       const result = await healthService.check();

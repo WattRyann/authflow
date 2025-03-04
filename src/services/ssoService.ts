@@ -208,10 +208,41 @@ export async function handleSSOCallback(
  * @param {string} code - 授权码
  * @returns {Promise<any>} 包含访问令牌的响应
  */
-async function exchangeCodeForToken(provider: string, code: string): Promise<any> {
+// 在文件顶部添加类型定义
+interface TokenResponse {
+  access_token: string;
+  token_type?: string;
+  expires_in?: number;
+  refresh_token?: string;
+}
+
+interface GoogleUserInfo {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+}
+
+interface GithubUserInfo {
+  id: string;
+  login: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
+}
+
+// 修改 exchangeCodeForToken 函数中的 body 参数类型
+async function exchangeCodeForToken(
+  provider: string, 
+  code: string
+): Promise<TokenResponse> {
   const redirectUri = `${process.env.API_BASE_URL}/api/v1/sso/${provider}/callback`;
   let tokenUrl: string;
-  let body: any;
+  
+  // 使用更精确的类型代替 any
+  let body: 
+    | { client_id?: string; client_secret?: string; code: string; redirect_uri: string; grant_type: string }  // Google
+    | { client_id?: string; client_secret?: string; code: string; redirect_uri: string };  // GitHub
 
   switch (provider.toLowerCase()) {
     case 'google':
@@ -260,7 +291,10 @@ async function exchangeCodeForToken(provider: string, code: string): Promise<any
  * @param {string} accessToken - 访问令牌
  * @returns {Promise<any>} 用户信息
  */
-async function fetchUserInfo(provider: string, accessToken: string): Promise<any> {
+async function fetchUserInfo(
+  provider: string,
+  accessToken: string
+): Promise<GoogleUserInfo | GithubUserInfo> {
   let userInfoUrl: string;
   let headers: HeadersInit = {
     'Authorization': `Bearer ${accessToken}`
@@ -293,8 +327,12 @@ async function fetchUserInfo(provider: string, accessToken: string): Promise<any
   if (provider.toLowerCase() === 'github' && (!userInfo.email || userInfo.email === '')) {
     const emailsResponse = await fetch('https://api.github.com/user/emails', { headers });
     if (emailsResponse.ok) {
-      const emails = await emailsResponse.json();
-      const primaryEmail = emails.find((email: any) => email.primary && email.verified);
+      const emails = await emailsResponse.json() as Array<{
+        email: string;
+        primary: boolean;
+        verified: boolean;
+      }>;
+      const primaryEmail = emails.find(email => email.primary && email.verified);
       if (primaryEmail) {
         userInfo.email = primaryEmail.email;
       }
@@ -310,13 +348,14 @@ async function fetchUserInfo(provider: string, accessToken: string): Promise<any
  * @param {any} userInfo - 用户信息
  * @returns {string} 生成的用户名
  */
-function generateUsername(userInfo: any): string {
+function generateUsername(userInfo: GoogleUserInfo | GithubUserInfo): string {
   // 尝试从用户信息中提取用户名
   let username = '';
   
-  if (userInfo.login) { // GitHub
+  // 使用类型守卫区分 GitHub 和 Google 用户信息
+  if ('login' in userInfo) { // GitHub 用户
     username = userInfo.login;
-  } else if (userInfo.name) { // Google或其他
+  } else if (userInfo.name) { // Google 用户
     // 移除空格，转为小写
     username = userInfo.name.replace(/\s+/g, '').toLowerCase();
   } else if (userInfo.email) {

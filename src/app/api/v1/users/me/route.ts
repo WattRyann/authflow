@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUserInfo, changePassword } from '@/services/userService';
-import { APIResponse, UserInfo, ErrorCodes, ChangePasswordRequest } from '@/types/api';
+import { getCurrentUserInfo } from '@/services/userService';
+import { APIResponse, UserInfo, ErrorCodes } from '@/types/api';
 import { withAuth, extractTokenFromRequest } from '@/middleware/authMiddleware';
 import { APIError } from '@/middleware/errorHandler';
-import { passwordLimiter } from '@/middleware/rateLimit';
 import i18n from '@/i18n';
 
 // 辅助函数，返回一致的 JSON 错误响应

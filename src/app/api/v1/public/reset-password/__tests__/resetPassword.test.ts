@@ -1,4 +1,5 @@
 // resetPassword.test.ts
+import type { PrismaClient } from '@prisma/client';
 import { resetPassword } from '@/services/passwordService'; // 调整为实际路径
 import { ErrorCodes } from '@/types/api';
 
@@ -16,9 +17,24 @@ jest.mock('@/i18n', () => ({
   t: jest.fn((key) => key)
 }));
 
+interface TransactionMock {
+  password_Resets: {
+    findFirst: jest.Mock;
+    update: jest.Mock;
+  };
+  users: {
+    update: jest.Mock;
+  };
+  blacklisted_Tokens: {
+    createMany: jest.Mock;
+  };
+}
+
 describe('resetPassword', () => {
-  let mockPrisma: any;
-  let tx: any;
+  let mockPrisma: Partial<jest.Mocked<PrismaClient>> & {
+    $transaction: jest.Mock;
+  };
+  let tx: TransactionMock;
 
   const validToken = 'valid-token';
   const validNewPassword = 'ValidPass123';
@@ -51,10 +67,15 @@ describe('resetPassword', () => {
       }
     };
 
-    // 构造模拟的 PrismaClient，并将 $transaction 方法模拟为调用回调并传入 tx 对象
+    // 构造模拟的 PrismaClient
     mockPrisma = {
-      $transaction: jest.fn((callback: any) => callback(tx))
-    };
+      $transaction: jest.fn((callback: (tx: TransactionMock) => Promise<void>) => callback(tx)),
+      $connect: jest.fn(),
+      $disconnect: jest.fn(),
+      $on: jest.fn(),
+      $use: jest.fn()
+    } as unknown as typeof mockPrisma;
+
 
     // 默认情况下，新密码验证通过
     (validatePassword as jest.Mock).mockReturnValue(true);
@@ -66,9 +87,9 @@ describe('resetPassword', () => {
     // 当密码格式不符合要求时，validatePassword 返回 false
     (validatePassword as jest.Mock).mockReturnValue(false);
 
-    await expect(resetPassword(validToken, validNewPassword, mockPrisma))
+    await expect(resetPassword(validToken, validNewPassword, mockPrisma as unknown as PrismaClient))
       .rejects.toThrow(APIError);
-    await expect(resetPassword(validToken, validNewPassword, mockPrisma))
+    await expect(resetPassword(validToken, validNewPassword, mockPrisma as unknown as PrismaClient))
       .rejects.toMatchObject({
         statusCode: 400,
         code: ErrorCodes.INVALID_PASSWORD
@@ -79,9 +100,9 @@ describe('resetPassword', () => {
     // 模拟查询不到符合条件的重置记录
     tx.password_Resets.findFirst.mockResolvedValue(null);
 
-    await expect(resetPassword(validToken, validNewPassword, mockPrisma))
+    await expect(resetPassword(validToken, validNewPassword, mockPrisma as unknown as PrismaClient))
       .rejects.toThrow(APIError);
-    await expect(resetPassword(validToken, validNewPassword, mockPrisma))
+    await expect(resetPassword(validToken, validNewPassword, mockPrisma as unknown as PrismaClient))
       .rejects.toMatchObject({
         statusCode: 401,
         code: ErrorCodes.INVALID_RESET_TOKEN
@@ -96,7 +117,7 @@ describe('resetPassword', () => {
     tx.password_Resets.update.mockResolvedValue({});
     tx.blacklisted_Tokens.createMany.mockResolvedValue({});
 
-    await expect(resetPassword(validToken, validNewPassword, mockPrisma))
+    await expect(resetPassword(validToken, validNewPassword, mockPrisma as unknown as PrismaClient))
       .resolves.toBeUndefined();
 
     // 验证 hashPassword 被调用，新密码被转换为哈希密码
@@ -132,9 +153,9 @@ describe('resetPassword', () => {
     // 使用 spy 捕获 console.error
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    await expect(resetPassword(validToken, validNewPassword, mockPrisma))
+    await expect(resetPassword(validToken, validNewPassword, mockPrisma as unknown as PrismaClient))
       .rejects.toThrow(APIError);
-    await expect(resetPassword(validToken, validNewPassword, mockPrisma))
+    await expect(resetPassword(validToken, validNewPassword, mockPrisma as unknown as PrismaClient))
       .rejects.toMatchObject({
         statusCode: 500,
         code: ErrorCodes.INTERNAL_SERVER_ERROR
