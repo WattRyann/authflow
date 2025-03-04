@@ -32,6 +32,7 @@ jobs:
         cache: 'yarn'
         cache-dependency-path: yarn.lock
 
+    # 删除重复的 Corepack 步骤
     - name: 启用 Corepack 并设置 Yarn 4.6.0
       run: |
         corepack enable
@@ -76,7 +77,7 @@ jobs:
 
     - name: 强制启用 Corepack
       run: |
-        sudo corepack enable --install
+        corepack enable
         corepack prepare yarn@4.6.0 --activate
         echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
 
@@ -87,7 +88,8 @@ jobs:
         cache: 'yarn'
         cache-dependency-path: yarn.lock
     
-    - name: 启用 Corepack
+    # 删除重复的 Corepack 步骤
+    - name: 启用 Corepack 并设置 Yarn 4.6.0
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
