@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Users {
+  id                BigInt       @id @default(autoincrement())
+  email            String       @unique
+  username         String?      @unique
+  password_hash    String
+  is_active        Boolean      @default(true)
+  email_verified   Boolean      @default(false)
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @default(now())
+  password_changed_at DateTime? // 密码修改时间字段
+  roles            User_Roles[]
+  refreshTokens    Refresh_Tokens[]
+  blacklistedTokens Blacklisted_Tokens[]  // 反向关系
+  twoFactorSettings Two_Factor_Settings?
+  twoFactorBackupCodes Two_Factor_Backup_Codes[]
+  loginMethods     Login_Methods[]
+  emailVerifications Email_Verifications[]
+  passwordResets   Password_Resets[]
+}
+
+model Roles {
+  id         BigInt      @id @default(autoincrement())
+  name       String      @unique
+  users      User_Roles[]
+}
+
+model User_Roles {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  role_id    BigInt
+  assigned_at DateTime @default(now())
+  user       Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role       Roles     @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, role_id])
+}
+
+model Refresh_Tokens {
+  id         BigInt    @id @default(autoincrement())
+  token      String    @unique
+  user_id    BigInt
+  expires_at DateTime
+  created_at DateTime  @default(now())
+  ip_address String?   @db.VarChar(45)
+  user_agent String?   @db.Text
+  user       Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Blacklisted_Tokens {
+  id               BigInt    @id @default(autoincrement())
+  user_id          BigInt
+  token_identifier String    @db.VarChar(64)
+  token_type       String    @db.VarChar(10)
+  blacklisted_at   DateTime  @default(now())
+  expires_at       DateTime
+  user             Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([token_identifier])
+}
+
+model Two_Factor_Settings {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt   @unique
+  secret     String
+  is_enabled Boolean  @default(false)
+  enabled_at DateTime?
+  created_at DateTime @default(now())
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Two_Factor_Backup_Codes {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  code_hash  String
+  is_used    Boolean  @default(false)
+  created_at DateTime @default(now())
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, code_hash])
+}
+
+model Login_Methods {
+  id            BigInt   @id @default(autoincrement())
+  user_id       BigInt
+  provider      String
+  provider_id   String   @unique
+  provider_user_id String
+  created_at    DateTime @default(now())
+  user          Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([provider, provider_user_id])
+}
+
+model Email_Verifications {
+  id           BigInt   @id @default(autoincrement())
+  user_id      BigInt
+  token        String   @unique
+  requested_at DateTime @default(now())
+  expires_at   DateTime
+  is_used      Boolean  @default(false)
+  user         Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Password_Resets {
+  id           BigInt   @id @default(autoincrement())
+  user_id      BigInt
+  token        String   @unique
+  requested_at DateTime @default(now())
+  expires_at   DateTime
+  is_used      Boolean  @default(false)
+  user         Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
