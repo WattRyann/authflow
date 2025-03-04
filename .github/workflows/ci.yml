@@ -22,19 +22,15 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        package-manager: yarn@4.6.0 # 直接指定 Yarn 版本，避免冲突
         cache: 'yarn'
         cache-dependency-path: yarn.lock
-    - name: 移除默认 Yarn
-      run: |
-        sudo rm -f /usr/local/bin/yarn
-        sudo rm -f /usr/local/bin/yarnpkg
+
     - name: 启用 Corepack 并设置 Yarn 4.6.0
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
         yarn --version  # 验证版本，应输出 4.6.0
-        
+
     - name: 安装依赖
       run: yarn install --frozen-lockfile
 
