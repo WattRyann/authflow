@@ -18,6 +18,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # 必须在 setup-node 之后立即启用 Corepack
+    - name: 强制启用 Corepack
+      run: |
+        sudo corepack enable --install
+        corepack prepare yarn@4.6.0 --activate
+        echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
+
     - name: 设置 Node.js ${{ matrix.node-version }} 和 Yarn 4.6.0
       uses: actions/setup-node@v4
       with:
@@ -66,6 +73,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: 强制启用 Corepack
+      run: |
+        sudo corepack enable --install
+        corepack prepare yarn@4.6.0 --activate
+        echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
 
     - name: 设置 Node.js 22.x 和 Yarn 4.6.0
       uses: actions/setup-node@v4
