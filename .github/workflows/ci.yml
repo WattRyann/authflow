@@ -21,7 +21,7 @@ jobs:
     # 必须在 setup-node 之后立即启用 Corepack
     - name: 强制启用 Corepack
       run: |
-        sudo corepack enable --install
+        sudo corepack enable
         corepack prepare yarn@4.6.0 --activate
         echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
 
