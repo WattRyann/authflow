@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x] # 添加 22.x，支持最新版本测试
+        node-version: [18.x, 20.x, 22.x] # 测试所有版本
 
     steps:
     - uses: actions/checkout@v4
@@ -21,16 +21,17 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
+        # 禁用默认的 Yarn 安装，避免干扰 Corepack
         cache: 'yarn'
-        # 通过 setup-node 启用 Corepack 和指定 Yarn 版本
-        always-auth: false
-        registry-url: 'https://registry.yarnpkg.com'
+        # 指定使用 Corepack 来管理 yarn，确保版本一致
+        cache-dependency-path: yarn.lock
 
     - name: Enable Corepack and Set Yarn Version
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
-        yarn --version # 验证 Yarn 版本，确保为 4.6.0
+        # 验证 Yarn 版本，确保切换成功
+        yarn --version | grep "4.6.0" || (echo "Yarn version mismatch" && exit 1)
 
     - name: Get Yarn Cache Directory
       id: yarn-cache-dir
@@ -62,7 +63,7 @@ jobs:
         CI: true
 
     - name: Upload Coverage Reports
-      uses: codecov/codecov-action@v4
+      uses: actions/cache@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./coverage
@@ -86,12 +87,13 @@ jobs:
       with:
         node-version: 22.x
         cache: 'yarn'
+        cache-dependency-path: yarn.lock
 
     - name: Enable Corepack and Set Yarn Version
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
-        yarn --version # 验证 Yarn 版本
+        yarn --version | grep "4.6.0" || (echo "Yarn version mismatch" && exit 1)
 
     - name: Install Dependencies
       run: yarn install --frozen-lockfile
