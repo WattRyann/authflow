@@ -75,7 +75,10 @@ jobs:
         cache-dependency-path: yarn.lock
     
     - name: 启用 Corepack
-      run: corepack enable
+      run: |
+        corepack enable
+        corepack prepare yarn@4.6.0 --activate
+        yarn --version  # 验证版本
     
     - name: 安装依赖
       run: yarn install --frozen-lockfile
