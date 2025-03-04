@@ -23,6 +23,12 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
     
+    # 添加启用 Corepack 的步骤
+    - name: Enable Corepack
+      run: |
+        corepack enable
+        corepack prepare yarn@4.6.0 --activate
+    
     - name: Get yarn cache directory path
       id: yarn-cache-dir-path
       run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
