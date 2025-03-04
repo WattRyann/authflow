@@ -12,64 +12,44 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x] # 测试所有版本
+        node-version: [18.x, 20.x, 22.x] # 测试多个 Node.js 版本
+      fail-fast: true # 若某个版本失败，立即停止其他版本测试，节省资源
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: 设置 Node.js ${{ matrix.node-version }} 和 Yarn 4.6.0
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        # 禁用默认的 Yarn 安装，避免干扰 Corepack
+        package-manager: yarn@4.6.0 # 直接指定 Yarn 版本，避免冲突
         cache: 'yarn'
-        # 指定使用 Corepack 来管理 yarn，确保版本一致
         cache-dependency-path: yarn.lock
 
-    - name: Enable Corepack and Set Yarn Version
-      run: |
-        corepack enable
-        corepack prepare yarn@4.6.0 --activate
-        # 验证 Yarn 版本，确保切换成功
-        yarn --version | grep "4.6.0" || (echo "Yarn version mismatch" && exit 1)
-
-    - name: Get Yarn Cache Directory
-      id: yarn-cache-dir
-      run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
-
-    - name: Cache Yarn Dependencies
-      uses: actions/cache@v4
-      id: yarn-cache
-      with:
-        path: ${{ steps.yarn-cache-dir.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-yarn-${{ matrix.node-version }}-
-
-    - name: Install Dependencies
+    - name: 安装依赖
       run: yarn install --frozen-lockfile
 
-    - name: Setup Test Environment
+    - name: 配置测试环境
       run: |
         cp .env.example .env.test
         echo "NODE_ENV=test" >> .env.test
 
-    - name: Run Linter
+    - name: 运行 Linter
       run: yarn lint
 
-    - name: Run Tests
+    - name: 运行测试
       run: yarn test
       env:
         CI: true
 
-    - name: Upload Coverage Reports
-      uses: actions/cache@v4
+    - name: 上传覆盖率报告
+      uses: codecov/codecov-action@v4 # 修正为正确的 Codecov 动作
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./coverage
         fail_ci_if_error: false
 
-    - name: Build Project
+    - name: 构建项目
       run: yarn build
       env:
         CI: true
@@ -82,33 +62,28 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Use Node.js 22.x
+    - name: 设置 Node.js 22.x 和 Yarn 4.6.0
       uses: actions/setup-node@v4
       with:
         node-version: 22.x
+        package-manager: yarn@4.6.0 # 一致指定 Yarn 版本
         cache: 'yarn'
         cache-dependency-path: yarn.lock
 
-    - name: Enable Corepack and Set Yarn Version
-      run: |
-        corepack enable
-        corepack prepare yarn@4.6.0 --activate
-        yarn --version | grep "4.6.0" || (echo "Yarn version mismatch" && exit 1)
-
-    - name: Install Dependencies
+    - name: 安装依赖
       run: yarn install --frozen-lockfile
 
-    - name: Setup Production Environment
+    - name: 配置生产环境
       run: |
         cp .env.example .env.production
         echo "NODE_ENV=production" >> .env.production
         echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" >> .env.production
         echo "ALLOWED_ORIGINS=${{ secrets.PROD_ALLOWED_ORIGINS }}" >> .env.production
 
-    - name: Install Vercel CLI
+    - name: 安装 Vercel CLI
       run: yarn global add vercel
 
-    - name: Deploy to Vercel
+    - name: 部署到 Vercel
       run: vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
