@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    appDir: true,
+    // 移除已废弃的appDir配置
+    // appDir: true,
+    ...existingConfig.experimental
   },
   async headers() {
     return [
