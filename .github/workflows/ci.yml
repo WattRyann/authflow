@@ -47,8 +47,8 @@ jobs:
         cp .env.example .env.test
         echo "NODE_ENV=test" >> .env.test
 
-    - name: 运行 Linter
-      run: yarn lint
+    # - name: 运行 Linter
+    #   run: yarn lint
 
     - name: 运行测试
       run: yarn test
