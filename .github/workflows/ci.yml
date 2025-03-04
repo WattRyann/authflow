@@ -71,10 +71,12 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 22.x
-        package-manager: yarn@4.6.0 # 一致指定 Yarn 版本
         cache: 'yarn'
         cache-dependency-path: yarn.lock
-
+    
+    - name: 启用 Corepack
+      run: corepack enable
+    
     - name: 安装依赖
       run: yarn install --frozen-lockfile
 
