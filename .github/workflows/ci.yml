@@ -99,6 +99,36 @@ jobs:
         corepack prepare yarn@4.6.0 --activate
         yarn --version  # 验证版本
     
+    - name: 配置生产环境变量
+      run: |
+        cat <<EOT > .env.production
+        DATABASE_URL="${{ secrets.DATABASE_URL }}"
+        SECRET_KEY="${{ secrets.SECRET_KEY }}"
+        REFRESH_SECRET_KEY="${{ secrets.REFRESH_SECRET_KEY }}"
+        ALGORITHM="HS256"
+        MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+        MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+        MAIL_FROM="${{ secrets.MAIL_FROM }}"
+        MAIL_PORT=587
+        MAIL_SERVER="smtp.gmail.com"
+        MAIL_SSL_TLS=false
+        MAIL_STARTTLS=true
+        MAIL_USE_CREDENTIALS=true
+        VERIFICATION_CODE_LENGTH=6
+        VERIFICATION_CODE_EXPIRE_MINUTES=10
+        REDIS_URL="${{ secrets.REDIS_URL }}"
+        REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
+        REDIS_PORT=6379
+        REDIS_DB=0
+        GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        GITHUB_CLIENT_ID="${{ secrets.GITHUB_CLIENT_ID }}"
+        GITHUB_CLIENT_SECRET="${{ secrets.GITHUB_CLIENT_SECRET }}"
+        BASE_URL="${{ secrets.PROD_BASE_URL }}"
+        ALLOWED_ORIGINS="${{ secrets.PROD_ALLOWED_ORIGINS }}"
+        NODE_ENV="production"
+        EOT
+
     - name: 安装依赖
       run: yarn install --frozen-lockfile
 
