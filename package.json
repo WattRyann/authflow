@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.development -- next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "dotenv -e .env.production -- next start",
     "test": "dotenv -e .env.test -- jest --coverage",
     "lint": "eslint . --ext .ts,.tsx",
