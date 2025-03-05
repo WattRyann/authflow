@@ -132,12 +132,12 @@ jobs:
     - name: 安装依赖
       run: yarn install --frozen-lockfile
 
-    - name: 配置生产环境
-      run: |
-        cp .env.example .env.production
-        echo "NODE_ENV=production" >> .env.production
-        echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" >> .env.production
-        echo "ALLOWED_ORIGINS=${{ secrets.PROD_ALLOWED_ORIGINS }}" >> .env.production
+    # - name: 配置生产环境
+    #   run: |
+    #     cp .env.example .env.production
+    #     echo "NODE_ENV=production" >> .env.production
+    #     echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" >> .env.production
+    #     echo "ALLOWED_ORIGINS=${{ secrets.PROD_ALLOWED_ORIGINS }}" >> .env.production
 
     - name: 部署到 Vercel
       run: yarn dlx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
