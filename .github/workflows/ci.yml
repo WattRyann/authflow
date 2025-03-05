@@ -124,8 +124,8 @@ jobs:
         GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
         GITHUB_CLIENT_ID="${{ secrets.GITHUB_CLIENT_ID }}"
         GITHUB_CLIENT_SECRET="${{ secrets.GITHUB_CLIENT_SECRET }}"
-        BASE_URL="${{ secrets.PROD_BASE_URL }}"
-        ALLOWED_ORIGINS="${{ secrets.PROD_ALLOWED_ORIGINS }}"
+        BASE_URL="${{ secrets.BASE_URL }}"
+        ALLOWED_ORIGINS="${{ secrets.ALLOWED_ORIGINS }}"
         NODE_ENV="production"
         EOT
 
