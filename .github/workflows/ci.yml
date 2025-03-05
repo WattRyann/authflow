@@ -109,11 +109,8 @@ jobs:
         echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" >> .env.production
         echo "ALLOWED_ORIGINS=${{ secrets.PROD_ALLOWED_ORIGINS }}" >> .env.production
 
-    - name: 安装 Vercel CLI
-      run: yarn global add vercel
-
     - name: 部署到 Vercel
-      run: vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+      run: yarn dlx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
