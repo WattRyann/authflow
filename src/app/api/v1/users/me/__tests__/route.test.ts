@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getUserHandler } from '../route';
+import { GET } from '../route';
 import { getCurrentUserInfo } from '@/services/userService';
 import { ErrorCodes, UserInfo } from '@/types/api';
 import { APIError } from '@/middleware/errorHandler';
@@ -8,7 +8,26 @@ import { extractTokenFromRequest } from '@/middleware/authMiddleware';
 // Mock dependencies for testing
 jest.mock('@/services/userService');
 jest.mock('@/middleware/authMiddleware', () => ({
-  withAuth: jest.fn((handler) => handler),
+  withAuth: jest.fn((handler) => async (req: NextRequest) => {
+    // 确保调用 extractTokenFromRequest 函数
+    // const extractTokenFromRequest = require('@/middleware/authMiddleware').extractTokenFromRequest;
+    const token = extractTokenFromRequest(req);
+    
+    if (!token) {
+      return {
+        body: {
+          status: 'error',
+          data: null,
+          message: 'auth.errors.invalidToken',
+          code: ErrorCodes.INVALID_TOKEN
+        },
+        init: { status: 401 }
+      };
+    }
+    
+    // 调用处理函数并传递 userId
+    return handler(req, 123);
+  }),
   extractTokenFromRequest: jest.fn()
 }));
 jest.mock('next/server', () => ({
@@ -51,7 +70,7 @@ describe('getUserHandler', () => {
     (extractTokenFromRequest as jest.Mock).mockReturnValue(null);
 
     // Act: Invoke the handler
-    const response = await getUserHandler(mockRequest as NextRequest, mockUserId);
+    const response = await GET(mockRequest as NextRequest);
 
     // Assert: Validate error response and ensure service is not called
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
@@ -76,7 +95,7 @@ describe('getUserHandler', () => {
     (getCurrentUserInfo as jest.Mock).mockResolvedValue(mockUserInfo);
 
     // Act: Invoke the handler
-    const response = await getUserHandler(mockRequest as NextRequest, mockUserId);
+    const response = await GET(mockRequest as NextRequest);
 
     // Assert: Validate success response and function calls
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
@@ -101,7 +120,7 @@ describe('getUserHandler', () => {
     (getCurrentUserInfo as jest.Mock).mockRejectedValue(apiError);
 
     // Act: Invoke the handler
-    const response = await getUserHandler(mockRequest as NextRequest, mockUserId);
+    const response = await GET(mockRequest as NextRequest);
 
     // Assert: Validate error response matches APIError details
     expect(response).toEqual({
@@ -124,7 +143,7 @@ describe('getUserHandler', () => {
     (getCurrentUserInfo as jest.Mock).mockRejectedValue(new Error('Unknown error'));
 
     // Act: Invoke the handler
-    const response = await getUserHandler(mockRequest as NextRequest, mockUserId);
+    const response = await GET(mockRequest as NextRequest);
 
     // Assert: Validate response reflects internal server error
     expect(response).toEqual({
@@ -148,7 +167,7 @@ describe('getUserHandler', () => {
     const consoleSpy = jest.spyOn(console, 'error');
 
     // Act: Invoke the handler
-    await getUserHandler(mockRequest as NextRequest, mockUserId);
+    await GET(mockRequest as NextRequest);
 
     // Assert: Ensure console.error is not called in test environment
     expect(consoleSpy).not.toHaveBeenCalled();

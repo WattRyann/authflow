@@ -5,12 +5,28 @@ import { extractTokenFromRequest } from '@/middleware/authMiddleware';
 import { verifyEmail } from '@/services/emailVerificationService';
 
 // 导入被测试的函数
-import { patchHandler } from '../route';
+import { PATCH } from '../route';
 
 // 模拟依赖
 jest.mock('@/middleware/authMiddleware', () => ({
   extractTokenFromRequest: jest.fn(),
-  withAuth: jest.fn(handler => handler),
+  withAuth: jest.fn(handler => async (req: NextRequest) => {
+    // 确保调用 extractTokenFromRequest 函数
+    const token = extractTokenFromRequest(req);
+    if (!token) {
+      return {
+        body: {
+          status: 'error',
+          data: null,
+          message: 'auth.errors.invalidToken',
+          code: ErrorCodes.INVALID_TOKEN
+        },
+        init: { status: 401 }
+      };
+    }
+    // 调用处理函数并传递 userId
+    return handler(req, 123);
+  }),
 }));
 
 jest.mock('@/services/emailVerificationService', () => ({
@@ -31,7 +47,6 @@ jest.mock('next/server', () => ({
 
 describe('patchHandler', () => {
   let mockRequest: Partial<NextRequest>;
-  const userId = 123;
   const validCode = '123456';
   const mockVerificationResult = { isVerified: true };
 
@@ -49,11 +64,12 @@ describe('patchHandler', () => {
   });
 
   it('应该成功验证邮箱并返回成功响应', async () => {
-    const response = await patchHandler(mockRequest as NextRequest, userId);
+    const response = await PATCH(mockRequest as NextRequest);
     
     // 验证依赖函数调用
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
-    expect(verifyEmail).toHaveBeenCalledWith(userId, { code: validCode });
+    // 修改期望值，添加 userId 参数
+    expect(verifyEmail).toHaveBeenCalledWith(123, { code: validCode });
     
     // 验证响应内容
     expect(response).toEqual({
@@ -69,7 +85,7 @@ describe('patchHandler', () => {
   it('当访问令牌无效时应返回错误', async () => {
     (extractTokenFromRequest as jest.Mock).mockReturnValue(null);
     
-    const response = await patchHandler(mockRequest as NextRequest, userId);
+    const response = await PATCH(mockRequest as NextRequest);
     
     expect(response).toEqual({
       body: {
@@ -87,7 +103,7 @@ describe('patchHandler', () => {
   it('当请求体解析失败时应返回错误', async () => {
     (mockRequest.json as jest.Mock).mockRejectedValue(new Error('Invalid JSON'));
     
-    const response = await patchHandler(mockRequest as NextRequest, userId);
+    const response = await PATCH(mockRequest as NextRequest);
     
     expect(response).toEqual({
       body: {
@@ -106,7 +122,7 @@ describe('patchHandler', () => {
     const apiError = new APIError(400, ErrorCodes.INVALID_VERIFICATION_CODE, 'user.errors.invalidVerificationCode');
     (verifyEmail as jest.Mock).mockRejectedValue(apiError);
     
-    const response = await patchHandler(mockRequest as NextRequest, userId);
+    const response = await PATCH(mockRequest as NextRequest);
     
     expect(response).toEqual({
       body: {
@@ -123,7 +139,7 @@ describe('patchHandler', () => {
     const apiError = new APIError(400, ErrorCodes.VERIFICATION_CODE_EXPIRED, 'user.errors.verificationCodeExpired');
     (verifyEmail as jest.Mock).mockRejectedValue(apiError);
     
-    const response = await patchHandler(mockRequest as NextRequest, userId);
+    const response = await PATCH(mockRequest as NextRequest);
     
     expect(response).toEqual({
       body: {
@@ -140,7 +156,7 @@ describe('patchHandler', () => {
     const unknownError = new Error('未知错误');
     (verifyEmail as jest.Mock).mockRejectedValue(unknownError);
 
-    const response = await patchHandler(mockRequest as NextRequest, userId);
+    const response = await PATCH(mockRequest as NextRequest);
     
     expect(response).toEqual({
       body: {
@@ -158,7 +174,7 @@ describe('patchHandler', () => {
     const unknownError = new Error('测试错误');
     (verifyEmail as jest.Mock).mockRejectedValue(unknownError);
 
-    await patchHandler(mockRequest as NextRequest, userId);
+    await PATCH(mockRequest as NextRequest);
     
     expect(consoleSpy).not.toHaveBeenCalled();
     

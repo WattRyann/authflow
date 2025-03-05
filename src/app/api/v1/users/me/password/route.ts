@@ -1,43 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { changePassword } from '@/services/userService';
 import { APIResponse, ErrorCodes, ChangePasswordRequest } from '@/types/api';
-import { withAuth, extractTokenFromRequest } from '@/middleware/authMiddleware';
+import { withAuth } from '@/middleware/authMiddleware';
 import { APIError } from '@/middleware/errorHandler';
 import { passwordLimiter } from '@/middleware/rateLimit';
 import i18n from '@/i18n';
-
-// 辅助函数，返回一致的 JSON 错误响应
-function jsonError(message: string, code: ErrorCodes, status: number): NextResponse<APIResponse<null>> {
-  return NextResponse.json({
-    status: 'error',
-    data: null,
-    message,
-    code,
-  }, { status });
-}
-
-// 辅助函数，返回一致的 JSON 成功响应
-function jsonSuccess<T>(data: T, message: string): NextResponse<APIResponse<T>> {
-  return NextResponse.json({
-    status: 'success',
-    data,
-    message,
-  }, { status: 200 });
-}
+import { jsonError, jsonSuccess } from '@/utils/apiResponse';
 
 /**
  * 处理修改密码的 PATCH 请求
  */
-export async function patchHandler(
+async function patchHandler(
   request: NextRequest,
   userId: number
 ): Promise<NextResponse<APIResponse<null>>> {
   try {
-    // 验证访问令牌
-    const accessToken = extractTokenFromRequest(request);
-    if (!accessToken) {
-      return jsonError(i18n.t('auth.errors.invalidToken'), ErrorCodes.INVALID_TOKEN, 401);
-    }
 
     // 应用速率限制（5次/用户/小时）
     const rateLimitResult = await passwordLimiter.check(request, userId.toString());
@@ -79,6 +56,5 @@ export async function patchHandler(
     );
   }
 }
-
 // 导出路由处理函数，使用认证中间件包装
 export const PATCH = withAuth(patchHandler);

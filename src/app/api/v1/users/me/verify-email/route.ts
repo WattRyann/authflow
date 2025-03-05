@@ -4,25 +4,7 @@ import { withAuth, extractTokenFromRequest } from '@/middleware/authMiddleware';
 import { APIError } from '@/middleware/errorHandler';
 import { verifyEmail } from '@/services/emailVerificationService';
 import i18n from '@/i18n';
-
-// 辅助函数，返回一致的 JSON 错误响应
-export function jsonError(message: string, code: ErrorCodes, status: number): NextResponse<APIResponse<null>> {
-  return NextResponse.json({
-    status: 'error',
-    data: null,
-    message,
-    code,
-  }, { status });
-}
-
-// 辅助函数，返回一致的 JSON 成功响应
-export function jsonSuccess<T>(data: T, message: string): NextResponse<APIResponse<T>> {
-  return NextResponse.json({
-    status: 'success',
-    data,
-    message,
-  }, { status: 200 });
-}
+import { jsonError, jsonSuccess } from '@/utils/apiResponse';
 
 /**
  * 处理验证邮箱的请求
@@ -34,7 +16,7 @@ export function jsonSuccess<T>(data: T, message: string): NextResponse<APIRespon
  * @param {number} userId - 从认证中间件获取的用户ID
  * @returns {Promise<NextResponse>} - 包含验证结果的响应
  */
-export async function patchHandler(
+async function patchHandler(
   request: NextRequest,
   userId: number
 ): Promise<NextResponse<APIResponse<EmailVerificationResponse | null>>> {

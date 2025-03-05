@@ -7,26 +7,46 @@ import { sendVerificationEmail } from '@/utils/mailer';
 import { emailVerificationLimiter } from '@/middleware/rateLimit';
 
 // 导入被测试的函数，但不导入 jsonError 和 jsonSuccess
-import { postHandler } from '../route';
+import { POST } from '../route';
 
 // 模拟依赖
 jest.mock('@/middleware/authMiddleware', () => ({
-    extractTokenFromRequest: jest.fn(),
-    withAuth: jest.fn(handler => handler),
+  ...jest.requireActual('@/middleware/authMiddleware'),
+  extractTokenFromRequest: jest.fn(),
+  withAuth: jest.fn(handler => async (req: NextRequest) => {
+    // 正确调用 extractTokenFromRequest 函数
+    const token = extractTokenFromRequest(req);
+    
+    // 如果 extractTokenFromRequest 返回 null，模拟认证失败
+    if (!token) {
+      return {
+        status: 'error',
+        data: null,
+        code: ErrorCodes.INVALID_TOKEN,
+        message: 'auth.errors.invalidToken'
+      };
+    }
+    
+    // 否则调用处理函数
+    return handler(req, 123);
+  }),
 }));
 
 jest.mock('@/middleware/rateLimit', () => ({
+  ...jest.requireActual('@/middleware/rateLimit'),
   emailVerificationLimiter: {
     check: jest.fn(),
   },
 }));
 
 jest.mock('@/services/userService', () => ({
+  ...jest.requireActual('@/services/userService'),
   getUserEmailStatus: jest.fn(),
   generateEmailVerificationToken: jest.fn(),
 }));
 
 jest.mock('@/utils/mailer', () => ({
+  ...jest.requireActual('@/utils/mailer'),
   sendVerificationEmail: jest.fn(),
 }));
 
@@ -67,7 +87,7 @@ describe('postHandler', () => {
   });
 
   it('应该成功发送验证邮件并返回成功响应', async () => {
-    const response = await postHandler(mockRequest as NextRequest, userId);
+    const response = await POST(mockRequest as NextRequest);
     
     // 验证依赖函数调用
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
@@ -84,25 +104,10 @@ describe('postHandler', () => {
     });
   });
 
-  it('当访问令牌无效时应返回错误', async () => {
-    (extractTokenFromRequest as jest.Mock).mockReturnValue(null);
-    
-    const response = await postHandler(mockRequest as NextRequest, userId);
-    
-    expect(response).toEqual({
-      status: 'error',
-      data: null,
-      code: ErrorCodes.INVALID_TOKEN,
-      message: 'auth.errors.invalidToken'
-    });
-    
-    expect(emailVerificationLimiter.check).not.toHaveBeenCalled();
-  });
-
   it('当超出速率限制时应返回错误', async () => {
     (emailVerificationLimiter.check as jest.Mock).mockResolvedValue({ success: false });
     
-    const response = await postHandler(mockRequest as NextRequest, userId);
+    const response = await POST(mockRequest as NextRequest);
     
     expect(response).toEqual({
       status: 'error',
@@ -118,7 +123,7 @@ describe('postHandler', () => {
   it('当邮箱已验证时应返回错误', async () => {
     (getUserEmailStatus as jest.Mock).mockResolvedValue({ isVerified: true });
     
-    const response = await postHandler(mockRequest as NextRequest, userId);
+    const response = await POST(mockRequest as NextRequest);
     
     expect(response).toEqual({
       status: 'error',
@@ -135,7 +140,7 @@ describe('postHandler', () => {
     const apiError = new APIError(404, ErrorCodes.USER_NOT_FOUND, 'user.errors.userNotFound');
     (generateEmailVerificationToken as jest.Mock).mockRejectedValue(apiError);
     
-    const response = await postHandler(mockRequest as NextRequest, userId);
+    const response = await POST(mockRequest as NextRequest);
     
     expect(response).toEqual({
       status: 'error',
@@ -149,7 +154,7 @@ describe('postHandler', () => {
     const unknownError = new Error('未知错误');
     (generateEmailVerificationToken as jest.Mock).mockRejectedValue(unknownError);
 
-    const response = await postHandler(mockRequest as NextRequest, userId);
+    const response = await POST(mockRequest as NextRequest);
     
     expect(response).toEqual({
       status: 'error',

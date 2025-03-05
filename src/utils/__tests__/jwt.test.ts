@@ -2,7 +2,6 @@
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import ms from 'ms';
-import { PrismaClient } from '@prisma/client';
 
 // 设置环境变量
 process.env.JWT_ACCESS_SECRET = 'your-access-secret';
@@ -15,23 +14,31 @@ jest.mock('jsonwebtoken');
 jest.mock('uuid');
 jest.mock('ms');
 
-// Create the mock prisma client outside of jest.mock
+// 使用 jest.doMock 而不是 jest.mock
 const mockPrismaCreate = jest.fn();
-const mockPrisma = {
-  refresh_Tokens: {
-    create: mockPrismaCreate,
-  },
-} as unknown as PrismaClient;
 
-// Instead of using jest.mock directly, we'll use require for the real module
-// Jest already mocked the dependencies, but we need to mock the Prisma import
-// within the test file scope
-jest.mock('@/lib/prisma', () => ({
-  __esModule: true,
-  default: mockPrisma,
-}));
+// 在 jest.mock 中使用函数返回模拟对象
+jest.mock('@/lib/prisma', () => {
+  // 在这里创建一个新的 mock 函数，而不是引用外部变量
+  return {
+    __esModule: true,
+    default: {
+      refresh_Tokens: {
+        create: jest.fn().mockImplementation((...args) => {
+          // 将调用转发到外部的 mockPrismaCreate
+          return mockPrismaCreate(...args);
+        })
+      }
+    }
+  };
+});
 
-const { generateTokens } = require('@/utils/jwt');
+// 导入被测试的函数
+import { generateTokens } from '@/utils/jwt';
+import prisma from '@/lib/prisma';
+
+// 创建一个模拟的 Prisma 客户端用于测试
+const mockPrisma = prisma;
 
 describe('generateTokens', () => {
   const mockUserId = BigInt(1);

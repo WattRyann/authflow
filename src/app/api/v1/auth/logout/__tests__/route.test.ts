@@ -1,7 +1,7 @@
 // tests/logoutHandler.test.ts
 
 import { NextRequest } from 'next/server';
-import { logoutHandler } from '@/app/api/v1/auth/logout/route';
+import { POST } from '@/app/api/v1/auth/logout/route';
 import { logout } from '@/services/logoutService';
 import { ErrorCodes } from '@/types/api';
 import { APIError } from '@/middleware/errorHandler';
@@ -39,7 +39,7 @@ describe('logoutHandler', () => {
     (extractTokenFromRequest as jest.Mock).mockReturnValue(null);
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest);
+    const response = await POST(mockRequest as NextRequest);
 
     // Assertions
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
@@ -65,7 +65,7 @@ describe('logoutHandler', () => {
     mockRequest.json = mockJson;
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest);
+    const response = await POST(mockRequest as NextRequest);
 
     expect(extractTokenFromRequest).toHaveBeenCalledWith(mockRequest);
     expect(logout).toHaveBeenCalledWith('valid-access-token', { refresh_token: 'valid-refresh-token' });
@@ -88,7 +88,7 @@ describe('logoutHandler', () => {
     (logout as jest.Mock).mockRejectedValue(apiError);
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest);
+    const response = await POST(mockRequest as NextRequest);
 
     expect(response).toEqual({
       body: {
@@ -107,7 +107,7 @@ describe('logoutHandler', () => {
     (logout as jest.Mock).mockRejectedValue(new Error('Unknown error'));
 
     // Call handler
-    const response = await logoutHandler(mockRequest as NextRequest);
+    const response = await POST(mockRequest as NextRequest);
 
     expect(response).toEqual({
       body: {
@@ -128,7 +128,7 @@ describe('logoutHandler', () => {
     const mockJson = jest.fn().mockRejectedValue(new Error('Invalid JSON'));
     mockRequest.json = mockJson;
 
-    const response = await logoutHandler(mockRequest as NextRequest);
+    const response = await POST(mockRequest as NextRequest);
 
     // No error, just treat body as empty
     expect(mockJson).toHaveBeenCalled();

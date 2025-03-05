@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUserInfo } from '@/services/userService';
 import { APIResponse, UserInfo, ErrorCodes } from '@/types/api';
-import { withAuth, extractTokenFromRequest } from '@/middleware/authMiddleware';
+import { withAuth } from '@/middleware/authMiddleware';
 import { APIError } from '@/middleware/errorHandler';
 import i18n from '@/i18n';
 
@@ -27,16 +27,13 @@ function jsonSuccess<T>(data: T, message: string): NextResponse<APIResponse<T>> 
 /**
  * 处理获取当前用户信息的请求
  */
-export async function getUserHandler(
+async function getUserHandler(
   request: NextRequest,
   userId: number
 ): Promise<NextResponse<APIResponse<UserInfo | null>>> {
   try {
     // 从请求头中提取访问令牌
-    const accessToken = extractTokenFromRequest(request);
-    if (!accessToken) {
-      return jsonError(i18n.t('auth.errors.invalidToken'), ErrorCodes.INVALID_TOKEN, 401);
-    }
+    // 中间件已确保token有效
 
     // 获取用户信息
     const userInfo = await getCurrentUserInfo(userId);
@@ -65,6 +62,5 @@ export async function getUserHandler(
     );
   }
 }
-
 // 保留现有的 GET 处理函数
 export const GET = withAuth(getUserHandler);
