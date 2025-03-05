@@ -134,13 +134,13 @@ jobs:
         NODE_ENV="production"
         EOT
 
-    - name: 安装 Vercel CLI
-      run: yarn global add vercel  
-    - name: 调试环境变量
-      run: |
-        cat .env.production
-        echo "SECRET_KEY=$SECRET_KEY"
-        echo "REFRESH_SECRET_KEY=$REFRESH_SECRET_KEY"
+    # - name: 安装 Vercel CLI
+    #   run: yarn global add vercel  
+    # - name: 调试环境变量
+    #   run: |
+    #     cat .env.production
+    #     echo "SECRET_KEY=$SECRET_KEY"
+    #     echo "REFRESH_SECRET_KEY=$REFRESH_SECRET_KEY"
 
     - name: 部署到 Vercel
       run: yarn dlx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
