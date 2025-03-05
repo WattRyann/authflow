@@ -9,30 +9,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [22.x] # 测试多个 Node.js 版本
-      fail-fast: true # 若某个版本失败，立即停止其他版本测试，节省资源
+        node-version: [22.x]
+      fail-fast: true
 
     steps:
     - uses: actions/checkout@v4
 
-    # 必须在 setup-node 之后立即启用 Corepack
-    - name: 强制启用 Corepack
-      run: |
-        sudo corepack enable
-        corepack prepare yarn@4.6.0 --activate
-        echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
-
-    - name: 设置 Node.js ${{ matrix.node-version }} 和 Yarn 4.6.0
+    - name: 设置 Node.js 和 Yarn
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
         cache-dependency-path: yarn.lock
 
-    # 删除重复的 Corepack 步骤
     - name: 启用 Corepack 并设置 Yarn 4.6.0
       run: |
         corepack enable
@@ -47,22 +38,19 @@ jobs:
         cp .env.example .env.test
         echo "NODE_ENV=test" >> .env.test
 
-    # - name: 运行 Linter
-    #   run: yarn lint
-
     - name: 运行测试
       run: yarn test
       env:
         CI: true
 
     - name: 上传覆盖率报告
-      uses: codecov/codecov-action@v4 # 修正为正确的 Codecov 动作
+      uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./coverage
         fail_ci_if_error: false
 
-    - name: 配置构建环境
+    - name: 配置并构建生产环境
       run: |
         cp .env.example .env.production
         echo "NODE_ENV=production" >> .env.production
@@ -79,26 +67,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: 强制启用 Corepack
-      run: |
-        corepack enable
-        corepack prepare yarn@4.6.0 --activate
-        echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
-
-    - name: 设置 Node.js 22.x 和 Yarn 4.6.0
+    - name: 设置 Node.js 和 Yarn
       uses: actions/setup-node@v4
       with:
         node-version: 22.x
         cache: 'yarn'
         cache-dependency-path: yarn.lock
-    
-    # 删除重复的 Corepack 步骤
+
     - name: 启用 Corepack 并设置 Yarn 4.6.0
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
-        yarn --version  # 验证版本
-    
+        yarn --version
+
+    - name: 安装依赖
+      run: yarn install --frozen-lockfile
+
     - name: 配置生产环境变量
       run: |
         cat <<EOT > .env.production
@@ -131,20 +115,8 @@ jobs:
         NODE_ENV="production"
         EOT
 
-    - name: 调试环境变量
-      run: |
-        cat .env.production
-        echo "SECRET_KEY=$SECRET_KEY"
-        echo "REFRESH_SECRET_KEY=$REFRESH_SECRET_KEY"
-      # env:
-      #   SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      #   REFRESH_SECRET_KEY: ${{ secrets.REFRESH_SECRET_KEY }}
-
-    - name: 安装依赖
-      run: yarn install --frozen-lockfile
-
     - name: 部署到 Vercel
-      run: yarn dlx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+      run: npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
