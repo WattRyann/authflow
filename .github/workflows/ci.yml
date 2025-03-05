@@ -103,6 +103,8 @@ jobs:
       run: |
         cat <<EOT > .env.production
         DATABASE_URL="${{ secrets.DATABASE_URL }}"
+        JWT_ACCESS_SECRET="${{ secrets.SECRET_KEY }}"
+        JWT_REFRESH_SECRET="${{ secrets.REFRESH_SECRET_KEY }}"
         SECRET_KEY="${{ secrets.SECRET_KEY }}"
         REFRESH_SECRET_KEY="${{ secrets.REFRESH_SECRET_KEY }}"
         ALGORITHM="HS256"
