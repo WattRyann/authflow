@@ -136,9 +136,9 @@ jobs:
         cat .env.production
         echo "SECRET_KEY=$SECRET_KEY"
         echo "REFRESH_SECRET_KEY=$REFRESH_SECRET_KEY"
-      env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        REFRESH_SECRET_KEY: ${{ secrets.REFRESH_SECRET_KEY }}
+      # env:
+      #   SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      #   REFRESH_SECRET_KEY: ${{ secrets.REFRESH_SECRET_KEY }}
 
     - name: 安装依赖
       run: yarn install --frozen-lockfile
