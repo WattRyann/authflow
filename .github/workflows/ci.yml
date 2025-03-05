@@ -9,21 +9,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [22.x] # 测试多个 Node.js 版本
-      fail-fast: true # 若某个版本失败，立即停止其他版本测试，节省资源
+        node-version: [22.x] # 单版本测试以简化调试，可扩展到多版本
+      fail-fast: true
 
     steps:
     - uses: actions/checkout@v4
-
-    # 必须在 setup-node 之后立即启用 Corepack
-    - name: 强制启用 Corepack
-      run: |
-        sudo corepack enable
-        corepack prepare yarn@4.6.0 --activate
-        echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
 
     - name: 设置 Node.js ${{ matrix.node-version }} 和 Yarn 4.6.0
       uses: actions/setup-node@v4
@@ -32,23 +24,44 @@ jobs:
         cache: 'yarn'
         cache-dependency-path: yarn.lock
 
-    # 删除重复的 Corepack 步骤
     - name: 启用 Corepack 并设置 Yarn 4.6.0
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
         yarn --version  # 验证版本，应输出 4.6.0
 
+    - name: 配置测试环境变量
+      run: |
+        cat <<EOT > .env.test
+        DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb"
+        SECRET_KEY="test_secret_key_must_be_at_least_32_chars_long"
+        REFRESH_SECRET_KEY="test_refresh_secret_key_must_be_32_chars"
+        ALGORITHM="HS256"
+        MAIL_USERNAME="test@example.com"
+        MAIL_PASSWORD="testpassword"
+        MAIL_FROM="test@example.com"
+        MAIL_PORT=587
+        MAIL_SERVER="smtp.test.com"
+        MAIL_SSL_TLS=false
+        MAIL_STARTTLS=true
+        MAIL_USE_CREDENTIALS=true
+        VERIFICATION_CODE_LENGTH=6
+        VERIFICATION_CODE_EXPIRE_MINUTES=10
+        REDIS_URL="redis://:localhost:6379/0"
+        REDIS_PASSWORD=""
+        REDIS_PORT=6379
+        REDIS_DB=0
+        GOOGLE_CLIENT_ID="test_google_client_id"
+        GOOGLE_CLIENT_SECRET="test_google_client_secret"
+        GITHUB_CLIENT_ID="test_github_client_id"
+        GITHUB_CLIENT_SECRET="test_github_client_secret"
+        BASE_URL="http://localhost:3000"
+        ALLOWED_ORIGINS="http://localhost:3000"
+        NODE_ENV="test"
+        EOT
+
     - name: 安装依赖
       run: yarn install --frozen-lockfile
-
-    - name: 配置测试环境
-      run: |
-        cp .env.example .env.test
-        echo "NODE_ENV=test" >> .env.test
-
-    # - name: 运行 Linter
-    #   run: yarn lint
 
     - name: 运行测试
       run: yarn test
@@ -56,7 +69,7 @@ jobs:
         CI: true
 
     - name: 上传覆盖率报告
-      uses: codecov/codecov-action@v4 # 修正为正确的 Codecov 动作
+      uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./coverage
@@ -75,35 +88,54 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: 强制启用 Corepack
-      run: |
-        corepack enable
-        corepack prepare yarn@4.6.0 --activate
-        echo "YARN_VERSION=$(yarn --version)" >> $GITHUB_OUTPUT
-
     - name: 设置 Node.js 22.x 和 Yarn 4.6.0
       uses: actions/setup-node@v4
       with:
         node-version: 22.x
         cache: 'yarn'
         cache-dependency-path: yarn.lock
-    
-    # 删除重复的 Corepack 步骤
+
     - name: 启用 Corepack 并设置 Yarn 4.6.0
       run: |
         corepack enable
         corepack prepare yarn@4.6.0 --activate
         yarn --version  # 验证版本
-    
+
+    - name: 配置生产环境变量
+      run: |
+        cat <<EOT > .env.production
+        DATABASE_URL="${{ secrets.DATABASE_URL }}"
+        SECRET_KEY="${{ secrets.SECRET_KEY }}"
+        REFRESH_SECRET_KEY="${{ secrets.REFRESH_SECRET_KEY }}"
+        ALGORITHM="HS256"
+        MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+        MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+        MAIL_FROM="${{ secrets.MAIL_FROM }}"
+        MAIL_PORT=587
+        MAIL_SERVER="smtp.gmail.com"
+        MAIL_SSL_TLS=false
+        MAIL_STARTTLS=true
+        MAIL_USE_CREDENTIALS=true
+        VERIFICATION_CODE_LENGTH=6
+        VERIFICATION_CODE_EXPIRE_MINUTES=10
+        REDIS_URL="${{ secrets.REDIS_URL }}"
+        REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
+        REDIS_PORT=6379
+        REDIS_DB=0
+        GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+        GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+        GITHUB_CLIENT_ID="${{ secrets.GITHUB_CLIENT_ID }}"
+        GITHUB_CLIENT_SECRET="${{ secrets.GITHUB_CLIENT_SECRET }}"
+        BASE_URL="${{ secrets.PROD_BASE_URL }}"
+        ALLOWED_ORIGINS="${{ secrets.PROD_ALLOWED_ORIGINS }}"
+        NODE_ENV="production"
+        EOT
+
     - name: 安装依赖
       run: yarn install --frozen-lockfile
 
-    - name: 配置生产环境
-      run: |
-        cp .env.example .env.production
-        echo "NODE_ENV=production" >> .env.production
-        echo "BASE_URL=${{ secrets.PROD_BASE_URL }}" >> .env.production
-        echo "ALLOWED_ORIGINS=${{ secrets.PROD_ALLOWED_ORIGINS }}" >> .env.production
+    - name: 构建项目
+      run: yarn build
 
     - name: 安装 Vercel CLI
       run: yarn global add vercel
