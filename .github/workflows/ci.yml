@@ -135,9 +135,9 @@ jobs:
       run: |
         yarn dlx vercel --prod \
           --token ${{ secrets.VERCEL_TOKEN }} \
-          --env DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+          -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
           -e JWT_ACCESS_SECRET="${{ secrets.SECRET_KEY }}" \
-          --env JWT_REFRESH_SECRET="${{ secrets.REFRESH_SECRET_KEY }}" \
+          -e JWT_REFRESH_SECRET="${{ secrets.REFRESH_SECRET_KEY }}" \
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
