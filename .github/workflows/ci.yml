@@ -91,14 +91,7 @@ jobs:
         node-version: 22.x
         cache: 'yarn'
         cache-dependency-path: yarn.lock
-    
-    # 删除重复的 Corepack 步骤
-    - name: 启用 Corepack 并设置 Yarn 4.6.0
-      run: |
-        corepack enable
-        corepack prepare yarn@4.6.0 --activate
-        yarn --version  # 验证版本
-    
+
     - name: 安装依赖
       run: yarn install --frozen-lockfile
 
@@ -134,13 +127,11 @@ jobs:
         NODE_ENV="production"
         EOT
 
-    # - name: 安装 Vercel CLI
-    #   run: yarn global add vercel  
-    # - name: 调试环境变量
-    #   run: |
-    #     cat .env.production
-    #     echo "SECRET_KEY=$SECRET_KEY"
-    #     echo "REFRESH_SECRET_KEY=$REFRESH_SECRET_KEY"
+    - name: 调试环境变量
+      run: |
+        cat .env.production
+        echo "SECRET_KEY=$SECRET_KEY"
+        echo "REFRESH_SECRET_KEY=$REFRESH_SECRET_KEY"
 
     - name: 部署到 Vercel
       run: yarn dlx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
