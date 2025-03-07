@@ -71,3 +71,4 @@ temp/
 
 # 本地配置文件
 .localrc
+.docs

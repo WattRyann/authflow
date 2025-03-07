@@ -1,7 +1,7 @@
 // tests/logoutHandler.test.ts
 
 import { NextRequest } from 'next/server';
-import { POST } from '@/app/_api/v1/auth/logout/route';
+import { POST } from '@/app/api/v1/auth/logout/route';
 import { logout } from '@/services/logoutService';
 import { ErrorCodes } from '@/types/api';
 import { APIError } from '@/middleware/errorHandler';
